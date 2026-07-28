@@ -1,9 +1,4 @@
-"""
-schemas.py
-----------
-Pydantic models define the exact shape of API responses.
-FastAPI uses these to auto-generate docs and validate output.
-"""
+
 
 from pydantic import BaseModel
 from typing import List

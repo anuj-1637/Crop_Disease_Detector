@@ -1,16 +1,4 @@
-"""
-main.py
--------
-FastAPI app entry point.
 
-Run locally with:
-    uvicorn main:app --reload --port 8000
-
-Then open http://localhost:8000/docs for the interactive API docs.
-
-Make sure 'crop_disease_model.pth' (produced by the training script)
-is placed in this same 'backend' folder before starting the server.
-"""
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,8 +12,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Allow the frontend (running on a different origin/port) to call this API.
-# For production, replace "*" with your actual frontend domain.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load model once when the server starts (not on every request - that would be slow)
+
 classifier = None
 
 

@@ -1,27 +1,4 @@
-"""
-Crop/Plant Leaf Disease Classifier
-------------------------------------
-Dataset expected: PlantVillage (from Kaggle)
-Folder structure expected:
-    dataset/
-        train/
-            Tomato___Late_blight/
-                img1.jpg
-                img2.jpg
-            Tomato___healthy/
-                ...
-            Potato___Early_blight/
-                ...
-        val/
-            Tomato___Late_blight/
-                ...
-            ...
 
-If your downloaded dataset does NOT have train/val split already,
-see the `split_dataset()` helper function below to create one.
-
-Model: Transfer learning with MobileNetV2 (fast, accurate, lightweight)
-"""
 
 import os
 import shutil
@@ -35,10 +12,8 @@ from sklearn.metrics import classification_report, confusion_matrix
 import matplotlib.pyplot as plt
 import numpy as np
 
-# ---------------------------------------------------------
-# 0. CONFIG - change these paths/values as per your setup
-# ---------------------------------------------------------
-DATA_DIR = "dataset"          # folder containing train/ and val/
+
+DATA_DIR = "dataset"          
 TRAIN_DIR = os.path.join(DATA_DIR, "train")
 VAL_DIR = os.path.join(DATA_DIR, "val")
 BATCH_SIZE = 32
@@ -51,10 +26,6 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {DEVICE}")
 
 
-# ---------------------------------------------------------
-# 0.1 OPTIONAL HELPER - only run this ONCE if your dataset
-# is just class-folders with no train/val split yet.
-# ---------------------------------------------------------
 def split_dataset(source_dir, dest_dir, val_ratio=0.2):
     """
     Splits a flat dataset (class folders directly containing images)
@@ -83,20 +54,17 @@ def split_dataset(source_dir, dest_dir, val_ratio=0.2):
     print("Dataset split complete.")
 
 
-# ---------------------------------------------------------
-# 1. DATA TRANSFORMS
-# ---------------------------------------------------------
-# Training data gets augmentation (helps model generalize better)
+
 train_transforms = transforms.Compose([
     transforms.Resize((IMG_SIZE, IMG_SIZE)),
     transforms.RandomHorizontalFlip(),
     transforms.RandomRotation(15),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                          std=[0.229, 0.224, 0.225])  # ImageNet stats
+                          std=[0.229, 0.224, 0.225])  
 ])
 
-# Validation data - no augmentation, just resize + normalize
+
 val_transforms = transforms.Compose([
     transforms.Resize((IMG_SIZE, IMG_SIZE)),
     transforms.ToTensor(),
@@ -105,9 +73,7 @@ val_transforms = transforms.Compose([
 ])
 
 
-# ---------------------------------------------------------
-# 2. DATASETS AND DATALOADERS
-# ---------------------------------------------------------
+
 def get_dataloaders():
     train_dataset = datasets.ImageFolder(TRAIN_DIR, transform=train_transforms)
     val_dataset = datasets.ImageFolder(VAL_DIR, transform=val_transforms)
@@ -122,26 +88,19 @@ def get_dataloaders():
     return train_loader, val_loader, class_names
 
 
-# ---------------------------------------------------------
-# 3. MODEL - Transfer Learning with MobileNetV2
-# ---------------------------------------------------------
+
 def build_model(num_classes):
     model = models.mobilenet_v2(weights=models.MobileNet_V2_Weights.DEFAULT)
 
-    # Freeze the pretrained feature extractor layers
-    # (only train the final classifier layer - faster training)
     for param in model.features.parameters():
         param.requires_grad = False
 
-    # Replace the final classifier layer to match our number of classes
     model.classifier[1] = nn.Linear(model.last_channel, num_classes)
 
     return model.to(DEVICE)
 
 
-# ---------------------------------------------------------
-# 4. TRAINING LOOP
-# ---------------------------------------------------------
+
 def train_model(model, train_loader, val_loader):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.classifier.parameters(), lr=LEARNING_RATE)
@@ -149,7 +108,6 @@ def train_model(model, train_loader, val_loader):
     history = {"train_loss": [], "val_loss": [], "val_acc": []}
 
     for epoch in range(NUM_EPOCHS):
-        # ---- Training phase ----
         model.train()
         running_loss = 0.0
         for images, labels in train_loader:
@@ -165,7 +123,6 @@ def train_model(model, train_loader, val_loader):
 
         train_loss = running_loss / len(train_loader.dataset)
 
-        # ---- Validation phase ----
         model.eval()
         val_loss = 0.0
         correct = 0
@@ -196,9 +153,6 @@ def train_model(model, train_loader, val_loader):
     return history
 
 
-# ---------------------------------------------------------
-# 5. EVALUATION - confusion matrix + classification report
-# ---------------------------------------------------------
 def evaluate_model(model, val_loader, class_names):
     model.eval()
     all_preds = []
@@ -226,9 +180,6 @@ def evaluate_model(model, val_loader, class_names):
     print("Confusion matrix saved as confusion_matrix.png")
 
 
-# ---------------------------------------------------------
-# 6. PLOT TRAINING CURVES
-# ---------------------------------------------------------
 def plot_history(history):
     epochs = range(1, len(history["train_loss"]) + 1)
 
@@ -254,9 +205,6 @@ def plot_history(history):
     print("Training curves saved as training_curves.png")
 
 
-# ---------------------------------------------------------
-# 7. PREDICT ON A SINGLE NEW IMAGE (use this in your Streamlit app later)
-# ---------------------------------------------------------
 def predict_image(model, image_path, class_names):
     from PIL import Image
     model.eval()
@@ -274,12 +222,9 @@ def predict_image(model, image_path, class_names):
     return predicted_class, confidence_pct
 
 
-# ---------------------------------------------------------
-# MAIN
-# ---------------------------------------------------------
+
 if __name__ == "__main__":
-    # If you need to split your dataset first, uncomment this:
-    # split_dataset("PlantVillage_raw", DATA_DIR, val_ratio=0.2)
+
 
     train_loader, val_loader, class_names = get_dataloaders()
 
@@ -290,13 +235,9 @@ if __name__ == "__main__":
     evaluate_model(model, val_loader, class_names)
     plot_history(history)
 
-    # Save the trained model
     torch.save({
         "model_state_dict": model.state_dict(),
         "class_names": class_names
     }, MODEL_SAVE_PATH)
     print(f"Model saved to {MODEL_SAVE_PATH}")
 
-    # Example: predict on a single test image (uncomment and set path)
-    # predicted_class, confidence = predict_image(model, "test_leaf.jpg", class_names)
-    # print(f"Predicted: {predicted_class} ({confidence:.2f}% confidence)")

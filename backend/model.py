@@ -1,10 +1,4 @@
-"""
-model.py
---------
-Handles model loading and inference logic.
-Kept separate from main.py so the API layer stays clean
-and the model logic can be reused/tested independently.
-"""
+
 
 import torch
 import torch.nn as nn
@@ -16,7 +10,7 @@ MODEL_PATH = "crop_disease_model.pth"
 IMG_SIZE = 224
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Must match the transforms used during training (val_transforms)
+
 transform = transforms.Compose([
     transforms.Resize((IMG_SIZE, IMG_SIZE)),
     transforms.ToTensor(),
